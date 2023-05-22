@@ -72,13 +72,26 @@ const chan = new Channel();
 
 ### Channel Methods
 
+```close() => undefined```
+
+Close the channel.
+```
+chan.close()
+```
+
+```closed() => boolean```
+
+Returns ```true```/```false``` if the channel is closed/not closed.
+```
+if(chan.closed()) ...
+```
+
 ```put(msg) => Promise```
 
 Put a message at the end of the channel and return a Promise. If called with ```await``` the caller will suspend execution otherwise execution continues. The Promise resolves to ```true``` or ```false``` if the channel is closed.
 ```
 [await] chan.put(msg)
 ```
-
 
 ```[Symbol.asyncIterator]() => Iterator```
 

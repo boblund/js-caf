@@ -36,6 +36,7 @@ const chan1 = new Channel,
 	}
 })();
 
+// Async function 3
 (async () =>{
 	await delay(2000);
 	await chan2.put('msg3');
@@ -46,16 +47,17 @@ const chan1 = new Channel,
 	console.log('caf 3 chan3.put msg5');
 })();
 
+// Async function 4
 (async () =>{
 	await delay(4000);
 	console.log(`caf 4 chan3.takeAll(): ${await chan3.takeAll()}`);
 })();
 
+// Async function 5
 (async () =>{
 	await delay(6000);
 	console.log(`caf 5 chan3.takeAll(): ${await chan3.takeAll()}`);
 })();
-
 ```
 # API
 

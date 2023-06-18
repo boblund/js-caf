@@ -1,31 +1,38 @@
-import {Channel} from './js-caf.mjs';
+import {Channel} from './channel.mjs';
 export {Caf};
 
 class Caf {
-	static #channels = {};
-	#name = '';
-	#func = null;
-	#chan = null;
+	static #channels = new WeakMap();	// channel instances for Cafs by name
+	#func = null;											// Caf instance function
+	#chanWrapper = null;							// Instance of ChanWrapper passed to #func
+	#cafName;													// Debugging only
+
+	static #ChanWrapper = class ChanWrapper {
+		#channel = null; // Instance of actual Channel wrapped in ChanWrapper
+		//#name = '';
+		#cafThis  = null;
+
+		constructor(/*name, */callerThis){
+			Caf.#channels.set(callerThis, (this.#channel = new Channel));
+			//this.#name = name;
+			this.#cafThis = callerThis;
+		};
+
+		async sendMsg(dest, msg){ return await Caf.#channels.get(dest).put({source: this.#cafThis, msg}); };
+		async onMsg(){return await this.#channel.take();};
+		async onMsgAll(){return await this.#channel.takeAll();};
+		async *[Symbol.asyncIterator](){
+			while (true) {
+				yield await this.#channel.take();
+			}
+		};
+	}; // class ChanWrapper
 
 	constructor(name, f){
-		if(Caf.#channels[name] == undefined) {
-			this.#name = name;
-			this.#func = f;
-			Caf.#channels[name] = this.#chan = new Channel;
-		}
-	};
-
-	async *[Symbol.asyncIterator](){
-		if(this.#chan.closed()) return;
-		while (true) {
-			yield await this.#chan.take();
-		}
-	};
-
-	async put(name, message){
-		return await Caf.#channels[name].put({source: this.#name, data: message});
-	};
-	async start(){await this.#func();}
-	async take(){ return await this.#chan.take(); };
-	async takeAll(){ return await this.#chan.takeAll(); };
-};
+		this.#func = f;
+		this.#chanWrapper = new Caf.#ChanWrapper(/*name, */this);
+		this.#cafName = name;
+	}
+	get cafName(){ return this.#cafName; }
+	start(){this.#func(this.#chanWrapper);}
+} // class Caf

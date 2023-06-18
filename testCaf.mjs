@@ -1,24 +1,16 @@
 import {Caf} from './Caf.mjs';
 
-function delay(msec){return new Promise(r=>{setTimeout(()=>r(), msec);});};
-
-const a = new Caf('f1', async function(){
-	this.put('f2', 'hello1');
-	await delay(2000);
-	this.put('f2', 'hello2');
-	console.log(`f1: ${JSON.stringify(await this.take())}`);
-	await delay(2000);
-	this.put('f2', 'hello3');
+const f1 = new Caf('f1', async function(ch){ // ch instance of ChanWrapper
+	ch.sendMsg(f2,`hello`);
+	let {source: {cafName}, msg} = await ch.onMsg();
+	console.log(`f1 received ${cafName} ${msg}`);
 });
 
-const b = new Caf('f2', async function(){
-	let msg = await this.take();
-	console.log(`f2: ${JSON.stringify(msg)}`);
-	this.put(msg.source, 'hello');
-	for await (const msg of this){
-		console.log(`f2 async iterator msg: ${JSON.stringify(msg)}`);
+const f2 = new Caf('f2', async function(ch){
+	for await (const {source, msg} of ch){
+		console.log(`f2 received ${source.cafName} ${msg}`);
+		ch.sendMsg(source, `${msg} back`);
 	}
 });
 
-a.start();
-b.start();
+[f1, f2].forEach(e => e.start());

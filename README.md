@@ -132,9 +132,9 @@ Returns ```true```/```false``` if the channel is closed/not closed.
 if(chan.closed()<Boolean>) ...
 ```
 
-## chan.put()
+## chan.put()<Promise>
 
-Put a message at the end of the channel and return a Promise. The Promise resolves to ```true``` or ```false``` if the channel is closed.
+Puts a message at the end of the channel and returns a Promise. The Promise resolves to ```true``` or ```false``` if the channel is closed.
 
 ```
 const r<Promise> = await chan.put(msg)
@@ -148,7 +148,7 @@ Async iterator that waits for a message. Returns a Promise that resolves to the 
 for await (const msg<Object> of chan<Channel>) { ... }
 ```
 
-## chan.take()
+## chan.take()<Promise>
 
 Wait for a message. Returns a Promise that resolves to the next message in the channel or ```null``` if the channel is closed.
 
@@ -166,9 +166,9 @@ const msgArray<Array> = await chan.takeAll()
 
 # any interface
 
-## any([chan1, ..., chanN])
+## any([chan1, ..., chanN])<Promise>
 
-Return a Promise that resolves to an object ```{idx<Number>, msg<Object>}``` where ```idx``` is the index of the channel in the channel array parameter and ```msg``` is the next message from the channel. ```idx``` == 1 and ```msg``` == null if all the channels are closed.
+Get the next message from any of the channels. Returns a Promise that resolves to an object ```{idx<Number>, msg<Object>}``` where ```idx``` is the index of the channel in the channel array parameter and ```msg``` is the next message from the channel. ```idx``` == 1 and ```msg``` == null if all the channels are closed.
 ```
 const r<Promise> = await any([chan1<Channel>, ...])
 ```

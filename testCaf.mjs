@@ -1,3 +1,7 @@
+// Software license: Creative Commons Attribution-NonCommercial 4.0 International
+//
+// THIS SOFTWARE COMES WITHOUT ANY WARRANTY, TO THE EXTENT PERMITTED BY APPLICABLE LAW.
+
 import {Caf} from './Caf.mjs';
 
 const f1 = new Caf('f1', async function(ch){ // ch instance of ChanWrapper

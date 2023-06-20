@@ -1,3 +1,7 @@
+// Software license: Creative Commons Attribution-NonCommercial 4.0 International
+//
+// THIS SOFTWARE COMES WITHOUT ANY WARRANTY, TO THE EXTENT PERMITTED BY APPLICABLE LAW.
+
 export {Caf};
 import {Channel} from './Channel.mjs';
 

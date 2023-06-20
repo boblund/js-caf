@@ -1,5 +1,5 @@
 export {Caf};
-import {Channel} from './nChannel.mjs';
+import {Channel} from './Channel.mjs';
 
 class Caf {
 	static #channels = new WeakMap();	// channel instances for Cafs by Caf object

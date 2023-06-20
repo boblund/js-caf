@@ -24,15 +24,15 @@ const f2 = new Caf('f2', async function(ch){
 ```Caf``` and ```ChanWrapper``` automatically associate a message channel ```Channel``` with an async function, provide the source ```Caf``` instance to a message receiver and control access to the underlying message channel. ```Channel``` can also be used directly by async functions.
 
 ```
-import {Channel, any} from './js-caf.mjs';
+import {Channel, any} from './Channel.mjs';
 
 const chan1 = new Channel,
 	chan2 = new Channel;
 
 // Async function 1
 (async ()=>{
-	chan2.put('hello');
-	const msg = await chan1.take();
+	chan2.send('hello');
+	const msg = await chan1.get();
 	console.log(`caf 1 chan1 msg: ${msg}`);
 })();
 
@@ -40,7 +40,7 @@ const chan1 = new Channel,
 (async ()=>{
 	for await (const msg of chan2){
 		console.log(`caf 2 chan2 msg: ${msg}`);
-		chan1.put(`${msg} back`);
+		chan1.send(`${msg} back`);
 	}
 })();
 ```
@@ -132,12 +132,20 @@ Returns ```true```/```false``` if the channel is closed/not closed.
 if(chan.closed()<Boolean>) ...
 ```
 
-## chan.put()<Promise>
+## chan.get()<Promise>
+
+Wait for a message. Returns a Promise that resolves to the next message in the channel or ```null``` if the channel is closed.
+
+```
+const msg<Promise> = await chan.get();
+```
+
+## chan.send()<Promise>
 
 Puts a message at the end of the channel and returns a Promise. The Promise resolves to ```true``` or ```false``` if the channel is closed.
 
 ```
-const r<Promise> = await chan.put(msg)
+const r<Promise> = await chan.send(msg)
 ```
 
 ## chan.*[Symbol.asyncIterator]
@@ -146,22 +154,6 @@ Async iterator that waits for a message. Returns a Promise that resolves to the 
 
 ```
 for await (const msg<Object> of chan<Channel>) { ... }
-```
-
-## chan.take()<Promise>
-
-Wait for a message. Returns a Promise that resolves to the next message in the channel or ```null``` if the channel is closed.
-
-```
-const msg<Promise> = await chan.take();
-```
-
-## chan.takeAll()<Promise>
-
-Wait for one or more messages. Returns a Promise that resolves to an array of all the messages currently in the channel or ```null``` if the channel is closed.
-
-```
-const msgArray<Array> = await chan.takeAll()
 ```
 
 # any interface

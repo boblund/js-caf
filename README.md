@@ -57,7 +57,7 @@ const caf<Caf> = new Caf(cafName<String>, function<Function>);
 
 ## Caf.cafName
 
-Getter that returns the Caf instances name.
+Getter that returns the Caf instance's name.
 
 ```
 const name<String> = caf.cafName;
@@ -81,14 +81,6 @@ Wait for a message on the Caf instance's chanWrapper. Returns a Promise that res
 
 ```
 const msg<Promise> = await ch.onMsg();
-```
-
-## ch.onMsgAll()<Promise>
-
-Wait for all the messages on the Caf istance's chanWrapper. Returns a Promise that resolves to an array of objects, each with the message source and message ```[{source: {caf <Caf>}, msg <Object> }, ...]```.
-
-```
-const msgArray<Array> = await cafInstance.onMsg();
 ```
 
 ## ch.sendMsg()<Promise>
@@ -160,7 +152,7 @@ for await (const msg<Object> of chan<Channel>) { ... }
 
 ## any([chan1, ..., chanN])<Promise>
 
-Get the next message from any of the channels. Returns a Promise that resolves to an object ```{idx<Number>, msg<Object>}``` where ```idx``` is the index of the channel in the channel array parameter and ```msg``` is the next message from the channel. ```idx``` == 1 and ```msg``` == null if all the channels are closed.
+Get the next message from any of the channels. Returns a Promise that resolves to an object ```{idx<Number>, msg<Object>}``` where ```idx``` is the index of the channel in the channel array parameter and ```msg``` is the next message from the channel. ```idx``` == -1 and ```msg``` == null if all the channels are closed.
 ```
 const r<Promise> = await any([chan1<Channel>, ...])
 ```

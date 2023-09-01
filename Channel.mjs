@@ -8,33 +8,44 @@ class Channel {
 	#senders = [];
 	#getters = [];
 	#status = 'open';
+	#getKey = null;
+	#sendKey = null;
+	#closeKey = null;
 
-	constructor(){};
+	constructor({getKey, sendKey, closeKey} = {}){
+		this.#getKey = getKey;
+		this.#sendKey = sendKey;
+		this.#closeKey = closeKey;
+	};
 	
 	closed() {return this.#status == 'closed';}
-	close() {this.#status = 'closed';}
+	close(key = null) {
+		if(key != this.#closeKey) throw(new Error('close() requires key'));
+		this.#status = 'closed';}
 
-	get(){
+	get(key = null){
+		if(key != this.#getKey) throw(new Error('get() requires key'));
 		return new Promise(res => {
 			if(this.closed()) {
 				res(null);
 			} else if(this.#senders.length > 0){
-				const {sender, msg} = this.#senders.pop();
-				sender(true);
-				res(msg);
+				const {sender, msg} = this.#senders.shift();
+				sender(true); // sender promise response
+				res(msg); // getter promise response
 			} else {
 				this.#getters.push(res);
 			}
 		});
 	}
 
-	send(msg){
+	send(msg, key = null){
+		if(key != this.#sendKey) throw(new Error('send() requires key'));
 		return new Promise(res => {
 			if(this.closed()) {
 				res(false);
 			} if(this.#getters.length > 0) {
-				this.#getters.pop()(msg);
-				res(true);
+				this.#getters.pop()(msg); // getter promise response
+				res(true); // sender promise response
 			} else {
 				this.#senders.push({sender: res, msg});
 			}
@@ -55,9 +66,9 @@ function any(chArray){
 			allClosed = allClosed && ch.closed();
 			return ch.closed()
 				? new Promise(()=>{}) // closed channel shouldn't resolve
-				: new Promise((res) => { ch.get().then(msg => res({idx, msg})); });
+				: new Promise((res) => { ch.get().then(msg => res({idx, msg})); }); 
 		});
-	return allClosed
+	return allClosed 
 		? new Promise(res=>{res({idx: -1, msg: null});})
 		: Promise.race(retArray);
 }

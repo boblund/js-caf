@@ -2,44 +2,35 @@
 //
 // THIS SOFTWARE COMES WITHOUT ANY WARRANTY, TO THE EXTENT PERMITTED BY APPLICABLE LAW.
 
-import {Channel, any} from './Channel.mjs';
+import {Channel} from './Channel.mjs';
 
-function delay(msec){return new Promise(r=>{setTimeout(()=>r(), msec);});};
+async function f1(ch, {key}){
+	await f2Chan.send(`hello`);
+	await f3Chan.send('hello');
+	f2Chan.close(); // line 20 is never reached without this;
+	let msg = await ch.get(key);
+	console.log(`f1 received ${msg}`);
+};
 
-const chan1 = new Channel,
-	chan2 = new Channel,
-	chan3 = new Channel;
-
-// Async function 1
-(async ()=>{
-	await chan1.send('hello');
-	const msg = await chan2.get();
-	console.log(`caf 1 chan2 msg: ${msg}`);
-	chan1.send('msg1');
-	chan2.send('msg2');
-})();
-
-// Async function 2
-(async ()=>{
-	const msg = await chan1.get();
-	console.log(`caf2 chan1 msg: ${msg}`);
-	chan2.send(`${msg} yourself`);
-	console.log(`caf 2 [chan1, chan2] ${JSON.stringify(await any([chan1, chan2]))}`);
-	if(!chan1.closed) chan1.close();
-	chan2.send('msg1');
-	chan2.send('msg2');
-	for await (const msg of chan2){
-		console.log(`caf 2 chan2 async iterator msg: ${msg}`);
+async function f2(ch, {args}){
+	for await (const msg of ch){
+		console.log(`f2(${JSON.stringify(args)}) received ${msg}`);
+		await f1Chan.send(`${msg} back`);
 	}
-})();
+	console.log(`f2Chan is closed`);
+};
 
-// Async function 3
-(async () =>{
-	await delay(2000);
-	await chan2.send('msg3');
-	console.log('caf 3 chan2.send msg3');
-	await chan3.send('msg4');
-	console.log('caf 3 chan3.send msg4');
-	await chan3.send('msg5');
-	console.log('caf 3 chan3.send msg5');
-})();
+async function f3(ch){
+	console.log(`f3 received ${await ch.get()}`);
+};
+
+// Order is important. f2Chan and f3Chan must be defined when f1 starts
+const f2Chan = new Channel;
+f2(f2Chan, {args: {arg1: 1}});
+
+const f3Chan = new Channel;
+f3(f3Chan);
+
+const getKey = Symbol();
+const f1Chan = new Channel(getKey);
+f1(f1Chan, {getKey}); // key required for get()

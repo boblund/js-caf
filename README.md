@@ -1,146 +1,93 @@
 # JavaScript Communicating Async Functions (JS-CAF)
 
-JS-CAF (JavaScript communicating asynchronous functions) is a small, no dependency library that enables JavaScript async functions to cooperatively execute using message passing channels. A ```Caf``` instance is created with an optional name and a user defined async function, that is called with a ```ChanWrapper``` instance ```ch```. A ```ch``` has methods to send/receive messages to/from other CAF instances.
+JS-CAF (JavaScript communicating asynchronous functions) grew out of a need to model distributed network software designs. A search for available JavaScript concurrency libraries yielded an extensive list:
+[async-csp](https://github.com/dvlsg/async-csp), [Communicating Sequential Processes: an alternative to async generators](https://2ality.com/2017/03/csp-vs-async-generators.html), [We need channels (CSP section)](https://krasimirtsonev.com/blog/article/we-need-channels-intro-to-csp), [Generators and Channels in JavaScript](https://medium.com/javascript-inside/generators-and-channels-in-javascript-594f2cf9c16e), [f5io/csp](https://github.com/f5io/csp), plus others. These all proved to either not provide the desired communicating sequential process channel model or to be more complex than needed.
 
+JS-Caf consists of a single, small (75 lines), dependency-free module exposing a Channel class and associated utility functions. These, coupled with ES2017 async functions are all that is needed to build a Commuinicating Sequential Process (CSP) type system.
+
+A Channel instance is a one way channel in either a closed or not closed state on which objects can be sent and received. Keys can optionally be required for channel operations ```close```, ```get``` and ```send```. The ```get``` and ```send``` operations return a ```Promise```.
+
+A CSP is defined as an async function that sends (```await ch.send(msg)```) and receives (```msg = await ch.get()```) messages. The async function can ```await``` on these operations and will resume execution when the promise resolves at some future time.
+
+Here's an example showing JS-CAF use and features:
 ```
-import {Caf} from './Caf.mjs';
-
-const f1 = new Caf('f1', async function(ch){ // ch instance of ChanWrapper
-	ch.sendMsg(f2,`hello`);
-	let {source: {cafName}, msg} = await ch.onMsg();
-	console.log(`f1 received ${cafName} ${msg}`);
-});
-
-const f2 = new Caf('f2', async function(ch){
-	for await (const {source, msg} of ch){
-		console.log(`f2 received ${source.cafName} ${msg}`);
-		ch.sendMsg(source,`${msg} back`);
-	}
-});
-
-[f1, f2].forEach(e => e.start());
-```
-
-```Caf``` and ```ChanWrapper``` automatically associate a message channel ```Channel``` with an async function, provide the source ```Caf``` instance to a message receiver and control access to the underlying message channel. ```Channel``` can also be used directly by async functions.
-
-```
-import {Channel, any} from './Channel.mjs';
-
-const chan1 = new Channel,
-	chan2 = new Channel;
-
-// Async function 1
-(async ()=>{
-	chan2.send('hello');
-	const msg = await chan1.get();
-	console.log(`caf 1 chan1 msg: ${msg}`);
-})();
-
-// Async function 2
-(async ()=>{
-	for await (const msg of chan2){
-		console.log(`caf 2 chan2 msg: ${msg}`);
-		chan1.send(`${msg} back`);
-	}
-})();
-```
-
-# Caf API
-
-## Caf() Constructor
-
-Create a new Caf instance named `cafName` running async function ```function```. The Caf name is purely for debugging/logging purposes and can be the empty string.
-
-```
-const caf<Caf> = new Caf(cafName<String>, function<Function>);
+ 1 import {Channel} from './Channel.mjs';
+ 2  
+ 3 async function f1(ch, {key}){
+ 4   await f2Chan.send(`hello`);
+ 5   await f3Chan.send('hello');
+ 6   f2Chan.close(); // line 16 is never reached without this
+ 7   let msg = await ch.get(key);
+ 8   console.log(`f1 received ${msg}`);
+ 9 };
+10
+11 async function f2(ch, {args}){
+12   for await (const msg of ch){
+13     console.log(`f2(${JSON.stringify(args)}) received ${msg}`);
+14     await f1Chan.send(`${msg} back`);
+15   }
+16   console.log(`f2Chan is closed`);
+17 };
+18
+19 async function f3(ch){
+20   console.log(`f3 received ${await ch.get()}`);
+21 };
+22
+23 // Order is important. f2Chan and f3Chan must be defined when f1 starts
+24 const f2Chan = new Channel;
+25 f2(f2Chan, {args: {arg1: 1}});
+26
+27 const f3Chan = new Channel;
+28 f3(f3Chan);
+29
+30 const getKey = Symbol();
+31 const f1Chan = new Channel(getKey);
+32 f1(f1Chan, {getKey}); // key required for get()
 ```
 
-## Caf.cafName
+# Class Channel
 
-Getter that returns the Caf instance's name.
+## Channel([options]) \<Channel\>
 
-```
-const name<String> = caf.cafName;
-```
-
-## Caf.start()
-
-Calls the caf instance's async function.
+Create a new Channel instance in the not closed state. Options ```{closeKey: k1, getKey: k2, sendKey: k3}``` may specify a key, in which case it will be required for that channel's close, get or send method, respectively.
 
 ```
-caf.start();
+const chan = new Channel();
 ```
 
-# ChanWrapper API
+## chan.close([key]) \<undefined\>
 
-The ChanWrapper class provides a Channel interface tailored to the Caf class. It does not have a publically accessible constructor; a new ChanWrapper instance is created for each Caf instance and passed as an argument to the Caf function.
-
-## ch.onMsg()<Promise>
-
-Wait for a message on the Caf instance's chanWrapper. Returns a Promise that resolves to an object with the message source and message ```{source<Caf>, msg<Object> }```.
-
-```
-const msg<Promise> = await ch.onMsg();
-```
-
-## ch.sendMsg()<Promise>
-
-Send a message to another Caf instance. Returns a Promise that resolves to ```true```.
-
-```
-ch.sendMsg(receiver<Caf>, msg<Object);
-```
-
-## ch.*[Symbol.asyncIterator]<Promise>
-
-Async iterator that waits for a message on the Caf instance's chanWrapper. Returns a Promise that resolves to an object with the message source and message.
-
-```
-for await(const {source<Caf>, msg<Object>} of ch){...};
-```
-
-# Channel API
-
-## Channel() Constructor
-
-Create a new Channel instance in the not closed state.
-```
-const chan = new Channel;
-```
-
-## chan.close()
-
-Close the channel.
+Close the channel. If ```closeKey``` was specified when this instance was created then that key` is required otherwise an error is thrown.
 
 ```
 chan.close()
 ```
 
-## chan.closed()
+## chan.closed() \<Boolean\>
 
 Returns ```true```/```false``` if the channel is closed/not closed.
 
 ```
-if(chan.closed()<Boolean>) ...
+if(chan.closed()) ...
 ```
 
-## chan.get()<Promise>
+## chan.get([key]) \<Promise\>
 
-Wait for a message. Returns a Promise that resolves to the next message in the channel or ```null``` if the channel is closed.
+Wait for a message. Returns a Promise that resolves to the next message in the channel or ```null``` if the channel is closed. If ```getKey``` was specified when this instance was created then that key` is required otherwise an error is thrown.
 
 ```
 const msg<Promise> = await chan.get();
 ```
 
-## chan.send()<Promise>
+## chan.send(msg [, key]) \<Promise\>
 
-Puts a message at the end of the channel and returns a Promise. The Promise resolves to ```true``` or ```false``` if the channel is closed.
+Put a message at the end of the channel and return a Promise. The Promise resolves to ```true```, or ```false``` if the channel is closed. If ```sendKey``` was specified when this instance was created then that key`is required otherwise an error is thrown.
 
 ```
 const r<Promise> = await chan.send(msg)
 ```
 
-## chan.*[Symbol.asyncIterator]
+## chan.*[Symbol.asyncIterator] \<Promise\>
 
 Async iterator that waits for a message. Returns a Promise that resolves to the next message or null if the channel is closed.
 
@@ -150,14 +97,14 @@ for await (const msg<Object> of chan<Channel>) { ... }
 
 # any interface
 
-## any([chan1, ..., chanN])<Promise>
+## any([chan1, ..., chanN]) \<Promise\>
 
-Get the next message from any of the channels. Returns a Promise that resolves to an object ```{idx<Number>, msg<Object>}``` where ```idx``` is the index of the channel in the channel array parameter and ```msg``` is the next message from the channel. ```idx``` == -1 and ```msg``` == null if all the channels are closed.
+Get the next message from any of the channels. Return a Promise that resolves to an object ```{idx<Number>, msg<Object>}``` where ```idx``` is the index of the channel in the channel array parameter and ```msg``` is the next message from the channel. ```idx``` == -1 and ```msg``` == null if all the channels are closed.
 ```
-const r<Promise> = await any([chan1<Channel>, ...])
+const {idx, msg} = await any([chan1<Channel>, ...])
 ```
 # License
 
 Software license: Creative Commons Attribution-NonCommercial 4.0 International
 
-THIS SOFTWARE COMES WITHOUT ANY WARRANTY, TO THE EXTENT PERMITTED BY APPLICABLE LAW.
+```THIS SOFTWARE COMES WITHOUT ANY WARRANTY, TO THE EXTENT PERMITTED BY APPLICABLE LAW.```

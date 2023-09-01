@@ -99,7 +99,7 @@ for await (const msg<Object> of chan<Channel>) { ... }
 
 ## any([chan1, ..., chanN]) \<Promise\>
 
-Get the next message from any of the channels. Return a Promise that resolves to an object ```{idx<Number>, msg<Object>}``` where ```idx``` is the index of the channel in the channel array parameter and ```msg``` is the next message from the channel. ```idx``` == -1 and ```msg``` == null if all the channels are closed.
+Get the next message from any of the channels. **Note** none of the channels must require a ```key``` for ```get()```. Return a Promise that resolves to an object ```{idx<Number>, msg<Object>}``` where ```idx``` is the index of the channel in the channel array parameter and ```msg``` is the next message from the channel. ```idx``` == -1 and ```msg``` == null if all the channels are closed.
 ```
 const {idx, msg} = await any([chan1<Channel>, ...])
 ```

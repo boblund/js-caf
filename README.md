@@ -107,4 +107,4 @@ const {idx, msg} = await any([chan1<Channel>, ...])
 
 Software license: Creative Commons Attribution-NonCommercial 4.0 International
 
-```THIS SOFTWARE COMES WITHOUT ANY WARRANTY, TO THE EXTENT PERMITTED BY APPLICABLE LAW.```
+**THIS SOFTWARE COMES WITHOUT ANY WARRANTY, TO THE EXTENT PERMITTED BY APPLICABLE LAW.**

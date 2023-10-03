@@ -21,7 +21,13 @@ class Channel {
 	closed() {return this.#status == 'closed';}
 	close(key = null) {
 		if(key != this.#closeKey) throw(new Error('close() requires key'));
-		this.#status = 'closed';}
+		this.#status = 'closed';
+		if(this.#senders.length == 0){ // new for SocketPromise
+			for(const getter of this.#getters){
+				getter(null);
+			}
+		}
+	}
 
 	get(key = null){
 		if(key != this.#getKey) throw(new Error('get() requires key'));

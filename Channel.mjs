@@ -2,7 +2,7 @@
 //
 // THIS SOFTWARE COMES WITHOUT ANY WARRANTY, TO THE EXTENT PERMITTED BY APPLICABLE LAW.
 
-export {Channel, anyIdx};
+export {Channel};
 
 class Channel {
 	#senders = [];
@@ -12,7 +12,7 @@ class Channel {
 	constructor(){};
 	
 	closed() {return this.#status == 'closed';}
-	close(key = null) {
+	close() {
 		this.#status = 'closed';
 		if(this.#senders.length == 0){ // new for SocketPromise
 			for(const getter of this.#getters){
@@ -21,7 +21,7 @@ class Channel {
 		}
 	};
 
-	get(key = null){
+	get(){
 		return new Promise(res => {
 			switch(true) {
 				case this.#senders.length > 0:
@@ -40,7 +40,7 @@ class Channel {
 		});
 	};
 
-	send(msg, key = null){
+	send(msg){
 		return new Promise(res => {
 			switch(true) {
 				case this.#getters.length > 0:
@@ -64,14 +64,15 @@ class Channel {
 			yield await this.get();
 		}
 	};
-}
 
-async function anyIdx(promiseArray){
-	let retArray = promiseArray.map((promise, idx) => {
-		return new Promise((res, rej) => { promise.then(value => res({idx,value})).catch(e => rej(e)); }); 
-	});
-	let r = undefined;
-	try{ r = await Promise.any(retArray);}
-	catch(e){ r = {index: -1, value: undefined}; }
-	return r;
+
+	static async anyIdx(promiseArray){
+		let retArray = promiseArray.map((promise, idx) => {
+			return new Promise((res, rej) => { promise.then(value => res({idx,value})).catch(e => rej(e)); }); 
+		});
+		let r = undefined;
+		try{ r = await Promise.any(retArray);}
+		catch(e){ r = {index: -1, value: undefined}; }
+		return r;
+	}
 }

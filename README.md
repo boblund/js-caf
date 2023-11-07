@@ -3,11 +3,11 @@
 JS-CAF (JavaScript communicating asynchronous functions) grew out of a need to model distributed network software designs. A search for available JavaScript concurrency libraries yielded an extensive list:
 [async-csp](https://github.com/dvlsg/async-csp), [Communicating Sequential Processes: an alternative to async generators](https://2ality.com/2017/03/csp-vs-async-generators.html), [We need channels (CSP section)](https://krasimirtsonev.com/blog/article/we-need-channels-intro-to-csp), [Generators and Channels in JavaScript](https://medium.com/javascript-inside/generators-and-channels-in-javascript-594f2cf9c16e), [f5io/csp](https://github.com/f5io/csp), plus others. These all proved to either not provide the desired communicating sequential process channel model or to be more complex than needed.
 
-JS-Caf consists of a single, small (75 lines), dependency-free module exposing a Channel class and associated utility functions. These, coupled with ES2017 async functions are all that is needed to build a Commuinicating Sequential Process (CSP) type system.
+JS-Caf consists of a single, small (77 lines), dependency-free module exposing a Channel class that, coupled with ES2017 async functions, are all that is needed to build a Commuinicating Sequential Process (CSP) type system.
 
-A Channel instance is a one way channel in either a closed or not closed state on which objects can be sent and received. Keys can optionally be required for channel operations ```close```, ```get``` and ```send```. The ```get``` and ```send``` operations return a ```Promise```.
+A Channel instance is a one way channel in either a closed or not closed state over which objects can be sent and received. 
 
-A CSP is defined as an async function that sends (```await ch.send(msg)```) and receives (```msg = await ch.get()```) messages. The async function can ```await``` on these operations and will resume execution when the promise resolves at some future time.
+A CSP is defined as an async function that sends (```await ch.send(msg)```) and receives (```msg = await ch.get()```) messages over a Channel instance. The async function can ```await``` on these operations and will resume execution when the promise resolves at some future time.
 
 Here's an example showing JS-CAF use and features:
 ```
@@ -40,24 +40,46 @@ Here's an example showing JS-CAF use and features:
 27 const f3Chan = new Channel;
 28 f3(f3Chan);
 29
-30 const getKey = Symbol();
-31 const f1Chan = new Channel(getKey);
-32 f1(f1Chan, {getKey}); // key required for get()
 ```
 
+# Using
+
+Two methods are available to use js-caf.
+
+## Local
+
+Using SSH:
+
+```
+git clone git@github.com:boblund/js-caf.git
+```
+
+## Github.io
+
+```Channel.mjs``` can be imported directly from github.io.
+
+```
+import {Channel} from 'https://boblund.github.io/js-caf/Channel.mjs'
+```
+
+The ```--experimental-network-imports``` option is required to use this method in nodejs, i.e.
+
+```
+node --experimental-network-imports file.mjs
+```
 # Class Channel
 
 ## Channel([options]) \<Channel\>
 
-Create a new Channel instance in the not closed state. Options ```{closeKey: k1, getKey: k2, sendKey: k3}``` may specify a key, in which case it will be required for that channel's close, get or send method, respectively.
+Create a new Channel instance in the not closed state. 
 
 ```
 const chan = new Channel();
 ```
 
-## chan.close([key]) \<undefined\>
+## chan.close() \<undefined\>
 
-Close the channel. If ```closeKey``` was specified when this instance was created then that key` is required otherwise an error is thrown.
+Close the channel.
 
 ```
 chan.close()
@@ -71,17 +93,17 @@ Returns ```true```/```false``` if the channel is closed/not closed.
 if(chan.closed()) ...
 ```
 
-## chan.get([key]) \<Promise\>
+## chan.get() \<Promise\>|null
 
-Wait for a message. Returns a Promise that resolves to the next message in the channel or ```null``` if the channel is closed. If ```getKey``` was specified when this instance was created then that key` is required otherwise an error is thrown.
+Wait for a message. Returns a Promise that resolves to the next message in the channel or ```null``` if the channel is closed.
 
 ```
 const msg<Promise> = await chan.get();
 ```
 
-## chan.send(msg [, key]) \<Promise\>
+## chan.send(msg) \<Promise\>
 
-Put a message at the end of the channel and return a Promise. The Promise resolves to ```true```, or ```false``` if the channel is closed. If ```sendKey``` was specified when this instance was created then that key`is required otherwise an error is thrown.
+Put a message at the end of the channel and return a Promise. The Promise resolves to ```true```, or ```false``` if the channel is closed.
 
 ```
 const r<Promise> = await chan.send(msg)
@@ -95,13 +117,11 @@ Async iterator that waits for a message. Returns a Promise that resolves to the 
 for await (const msg<Object> of chan<Channel>) { ... }
 ```
 
-# any interface
+## Channel.anyIdx([promise1, ..., promiseN>]) \<Promise\>
 
-## any([chan1\<Channel\>, ..., chanN\<Channel\>]) \<Promise\>
-
-Get the next message from any of the channels. **Note** none of the channels must require a ```key``` for ```get()```. Return a Promise that resolves to an object ```{idx<Number>, msg<Object>}``` where ```idx``` is the index of the channel in the channel array parameter and ```msg``` is the next message from the channel. ```idx``` == -1 and ```msg``` == null if all the channels are closed.
+Static method that returns a Promise that resolves to an object ```{idx<Number>, msg<Object>}``` where ```idx``` is the index of the first promise in the promise array parameter to resolve and ```msg``` is result of that promise. ```idx``` == -1 and ```msg``` == null if all the promises reject.
 ```
-const {idx, msg} = await any([chan1, ...])
+const {idx, msg} = await Channel.anyIdx([chan1, ...])
 ```
 # License
 

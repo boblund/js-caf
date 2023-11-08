@@ -9,7 +9,7 @@ class Channel {
 	#getters = [];
 	#status = 'open';
 
-	constructor(){testFunc();};
+	constructor(){};
 	
 	closed() {return this.#status == 'closed';}
 	close() {

@@ -2,7 +2,6 @@
 //
 // THIS SOFTWARE COMES WITHOUT ANY WARRANTY, TO THE EXTENT PERMITTED BY APPLICABLE LAW.
 
-import {testFunc} from './testFunc.mjs';
 export {Channel};
 
 class Channel {

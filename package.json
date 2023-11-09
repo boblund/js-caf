@@ -1,0 +1,11 @@
+{
+  "name": "js-caf",
+  "version": "1.0.0",
+  "description": "JS-CAF (JavaScript communicating asynchronous functions)",
+	"main": "Channel.mjs",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}
